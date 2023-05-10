@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>My Car Parking System</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        .card {
+          margin-bottom: 20px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .card:hover {
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+        .card-header {
+          background-color: #f8f9fa;
+          font-weight: bold;
+          font-size: 1.2rem;
+        }
+        .card-body {
+          background-color: #ffffff;
+          font-size: 1.5rem;
+          font-weight: bold;
+        }
+        .card-available {
+            background-color: #9efe78;
+        }
+
+        .card-occupied {
+            background-color: #ff7984;
+        }
+
+        .card-booked {
+            background-color: #79a6ff;
+        }
+      </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-md navbar-light bg-light">
+    <a class="navbar-brand" href="/home">My Car Parking System</a>
+</nav>
+<div class="container">
+    <h1 class="my-5 text-center">Live Car Parking Status</h1>
+    <div class="row" id="sensor-list"></div>
+</div><br><br>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Book a Parking Slot</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="booking-form" action="/book" method="POST">
+                            <% if (error) { %>
+                                <div class="alert alert-danger" role="alert">
+                                    <%= error %>
+                                </div>
+                            <% } %>
+                            <div class="form-group">
+                                <label for="car-number"><i class="fas fa-car"></i> Car Number</label>
+                                <input type="text" class="form-control" id="car-number" name="car-number" placeholder="Enter car number" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="parking-slot"><i class="fas fa-map-marker-alt"></i> Parking Lot</label>
+                                <select class="form-control" id="parking-slot" name="parking-slot" required>
+                                    <option value="" disabled>Select a parking lot</option>
+                                    <option value="1">Slot 1</option>
+                                    <option value="2">Slot 2</option>
+                                    <option value="3">Slot 3</option>
+                                    <option value="4">Slot 4</option>
+                                    <option value="5">Slot 5</option>
+                                    <option value="6">Slot 6</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="start-time"><i class="far fa-clock"></i> Start Date and Time:</label>
+                                <input type="datetime-local" class="form-control" id="start-time" name="start-time" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="end-time"><i class="far fa-clock"></i> End Date and Time:</label>
+                                <input type="datetime-local" class="form-control" id="end-time" name="end-time" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="rental-charges">Rental Charges:</label>
+                                <input type="number" class="form-control" id="rental-charges" placeholder="click for rental-charges" readonly>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-calendar-check"></i> Book Slot</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        const socket = io();
+        socket.on('sensorData', function (data) {
+        const sensorList = $("#sensor-list");
+        sensorList.html("");
+          for (let i = 0; i < sensorData.length; i++) {
+            const cardAvailability = $("<div></div>");
+            cardAvailability.addClass("card availability");
+            cardAvailability.attr("id", "sensor-" + (i + 1));
+            const card = $("<div></div>");
+            card.addClass("card col-md-4");
+            if (data[i] === "1") {
+              card.addClass("card-available");
+            } else if (data[i] === "2") {
+              card.addClass("card-occupied");
+            } else if (data[i] === "3") {
+              card.addClass("card-booked");
+            }
+            const cardHeader = $("<div></div>");
+            cardHeader.addClass("card-header");
+            cardHeader.text("Sensor " + (i + 1));
+            const cardBody = $("<div></div>");
+            cardBody.addClass("card-body");
+            if (data[i] === "1") {
+              cardBody.text("Available");
+            } else if (data[i] === "2") {
+              cardBody.text("Occupied");
+            } else if (data[i] === "3") {
+              cardBody.text("Booked");
+            }
+            card.append(cardHeader);
+            card.append(cardBody);
+            cardAvailability.append(card);
+            sensorList.append(cardAvailability);
+          }
+        });
+      });
+      $(".card.availability").click(function () {
+          var parkingCardNo = $(this).attr('id');
+          $("#parking-slot").val(parkingCardNo);
+          // Check if the selected parking space is already booked
+          if ($(this).find('.status').text() == "Available") {
+            $(".btn-primary").attr('disabled', false);
+          } else {
+            $(".btn-primary").attr('disabled', true);
+            alert("Parking Space no." + $(this).attr('id') + " Not Avaialble")
+          }
+        });
+      $("#rental-charges").click(function() {
+        const RENT_PER_HOUR = 50;
+        const startDate = new Date($('#start-time').val());
+        const endDate = new Date($('#end-time').val());
+        const diffInMs = endDate - startDate;
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  
+        if (diffInHours < 0) {
+        alert('Invalid input: exit time should be after entry time.');
+        } else {
+          const rentalCharges = diffInHours * RENT_PER_HOUR;
+          $('#rental-charges').val(rentalCharges);
+        }
+      });
+    </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Live Sensor Status</title>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+      .card {
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+      }
+      .card-header {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+      .card-body {
+        background-color: #ffffff;
+        font-size: 1.5rem;
+        font-weight: bold;
+        text-align: center;
+      }
+      .card-on {
+        background-color: #9efe78;
+      }
+      .card-off {
+        background-color: #ff7984;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-md navbar-light bg-light">
+      <a class="navbar-brand" href="/home">My Car Parking System</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    </nav>
+    <div class="container">
+      <h1 class="my-5 text-center">Live Car Parking Status</h1>
+      <div class="row" id="sensor-list"></div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      $(document).ready(function () {
+        const socket = io();
+        socket.on('sensorData', function (data) {
+          const sensorList = $("#sensor-list");
+          sensorList.html("");
+          const sensorData = data.split(",");
+          for (let i = 0; i < sensorData.length; i++) {
+            const card = $("<div></div>");
+            card.addClass("card col-md-4");
+            card.addClass(sensorData[i] === "1" ? "card-on" : "card-off");
+            const cardHeader = $("<div></div>");
+            cardHeader.addClass("card-header");
+            cardHeader.text("Sensor " + (i + 1));
+            const cardBody = $("<div></div>");
+            cardBody.addClass("card-body");
+            cardBody.text(sensorData[i] === "0" ? "Occupied" : "Available");
+            card.append(cardHeader);
+            card.append(cardBody);
+            sensorList.append(card);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
